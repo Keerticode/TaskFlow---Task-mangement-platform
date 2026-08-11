@@ -1,5 +1,7 @@
 import { task } from "../models/tasks.models.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
 export const createTasks = asyncHandler(async (req, res) => {
@@ -14,84 +16,71 @@ export const createTasks = asyncHandler(async (req, res) => {
     } = req.body;
 
     if (!title || !assignedTo || !createdBy) {
-        return res
-            .status(400)
-            .json({
-                message: "Title, assignedTo and createdBy are required"
-            });
+        throw new ApiError(
+            400,
+            "Title, assignedTo and createdBy are required"
+        );
     }
 
-    const newTask = await task.create({
-        title,
-        description,
-        status,
-        priority,
-        dueDate,
-        assignedTo,
-        createdBy
-    });
+    const newTask = await task.create(req.body);
 
-    console.log("Task successfully created...");
-
-    return res
-        .status(201)
-        .json({
-            message: "Task created successfully",
-            task: newTask
-        });
-
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            newTask,
+            "Task created successfully"
+        )
+    );
 });
 
 export const getTasks = asyncHandler(async (req, res) => {
     const tasks = await task.find();
 
-    return res.status(200).json({
-        message: "Tasks fetched successfully",
-        tasks
-    });
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            tasks,
+            "Tasks fetched successfully"
+        )
+    );
 });
 
 export const getSingleTasks = asyncHandler(async (req, res) => {
-    const id = req.params.id;
+    const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res
-            .status(400)
-            .json({
-                message: "Invalid MongoDB ID"
-            });
+        throw new ApiError(
+            400,
+            "Invalid MongoDB ID"
+        );
     }
 
     const singleTask = await task.findById(id);
 
     if (!singleTask) {
-        return res
-            .status(404)
-            .json({
-                message: "Task not found"
-            });
+        throw new ApiError(
+            404,
+            "Task not found"
+        );
     }
 
-    return res
-        .status(200)
-        .json({
-            message: "Single task fetched successfully",
-            task: singleTask
-        });
-
-
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            singleTask,
+            "Single task fetched successfully"
+        )
+    );
 });
 
 export const updateTasks = asyncHandler(async (req, res) => {
-
-    const { id } = req.params.id;
+    const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res
-            .status(400)
-            .json({
-                message: "Invalid MongoDB ID"
-            });
+        throw new ApiError(
+            400,
+            "Invalid MongoDB ID"
+        );
     }
 
     const {
@@ -105,62 +94,61 @@ export const updateTasks = asyncHandler(async (req, res) => {
     } = req.body;
 
     if (!title || !assignedTo || !createdBy) {
-        return res
-            .status(400)
-            .json({
-                message: "Title, assignedTo and createdBy are required"
-            });
+        throw new ApiError(
+            400,
+            "Title, assignedTo and createdBy are required"
+        );
     }
 
     const updatedTask = await task.findByIdAndUpdate(
         id,
         req.body,
-        { new: true }
+        {
+            new: true,
+            runValidators: true
+        }
     );
 
     if (!updatedTask) {
-        return res
-            .status(404)
-            .json({
-                message: "Task not found"
-            });
+        throw new ApiError(
+            404,
+            "Task not found"
+        );
     }
 
-    return res
-        .status(200)
-        .json({
-            message: "Task updated successfully",
-            task: updatedTask
-        });
-
-
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            updatedTask,
+            "Task updated successfully"
+        )
+    );
 });
 
 export const deleteTasks = asyncHandler(async (req, res) => {
-
-    const id = req.params.id;
+    const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res
-            .status(400)
-            .json({
-                message: "Invalid MongoDB ID"
-            });
+        throw new ApiError(
+            400,
+            "Invalid MongoDB ID"
+        );
     }
 
     const deletedTask = await task.findByIdAndDelete(id);
 
     if (!deletedTask) {
-        return res
-            .status(404)
-            .json({
-                message: "Task not found"
-            });
+        throw new ApiError(
+            404,
+            "Task not found"
+        );
     }
 
-    return res
-        .status(200)
-        .json({
-            message: "Task successfully deleted"
-        });
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            deletedTask,
+            "Task deleted successfully"
+        )
+    );
 });
